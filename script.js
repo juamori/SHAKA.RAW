@@ -186,6 +186,12 @@
     });
   })(ARCHIVE_ROOT);
   const folderTotal = (f) => f.items.length + f.videos.length + f.folders.reduce((n, sf) => n + folderTotal(sf), 0);
+  // Folders with no files (images or videos, at any depth) stay hidden until content is added.
+  // They remain in config.js and on disk, reserved for later.
+  const isPublic = (f) => folderTotal(f) > 0;
+  const publicSubs = (f) => f.folders.filter(isPublic);
+  const PUBLIC_ROOT = ARCHIVE_ROOT.filter(isPublic);
+  const PUBLIC_INDEX = new Map([...ARCHIVE_INDEX].filter(([, f]) => isPublic(f)));
   const VIDEO_COUNT = ARCHIVE_ROOT.reduce(function count(n, f) { return n + f.videos.length + f.folders.reduce(count, 0); }, 0);
   const itemHash = (e) => `#archive/${e.folder.path}/img-${e.n}`;
   const INTERESTS = list(C.interests)
@@ -241,7 +247,7 @@
       case 'interests': return INTERESTS.reduce((n, c) => n + c.items.length, 0);
       case 'lab': return PROJECTS.length;
       case 'links': return LINKS.length;
-      case 'archive': return ARCHIVE.length;
+      case 'archive': return ARCHIVE.length + VIDEO_COUNT; // images + videos, same total as the Archive and terminal
       default: return 0;
     }
   }
@@ -482,12 +488,21 @@
   }
 
   // Record sleeve: a CSS vinyl placeholder, replaced by real artwork when a cover is configured.
-  function sleeve(cover, cls) {
-    const box = h('div', { class: 'sleeve ' + (cls || ''), 'aria-hidden': 'true' }, h('span', { class: 'disc' }));
+  // Album covers dropped into assets/music/covers/ are matched by "title-artist"
+  // (e.g. rumours-fleetwood-mac.jpg) via archive-manifest.js. An explicit cover in config.js wins.
+  const COVERS = (window.SHAKA_ARCHIVE_MANIFEST && typeof window.SHAKA_ARCHIVE_MANIFEST.covers === 'object')
+    ? window.SHAKA_ARCHIVE_MANIFEST.covers : {};
+  const coverKey = (rec) => `${str(rec.title)}-${str(rec.artist)}`.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const coverFor = (rec) => safeMedia(rec.cover) || safeMedia(COVERS[coverKey(rec)]);
+
+  function sleeve(cover, cls, alt) {
     const src = safeMedia(cover);
+    // With real artwork the image is described for screen readers; the placeholder stays decorative.
+    const box = h('div', { class: 'sleeve ' + (cls || ''), 'aria-hidden': src && alt ? null : 'true' }, h('span', { class: 'disc' }));
     if (src) {
-      const img = h('img', { src, alt: '', loading: 'lazy' });
-      img.addEventListener('error', () => img.remove(), { once: true });
+      const img = h('img', { src, alt: alt || '', loading: 'lazy', decoding: 'async', width: 600, height: 600 });
+      img.addEventListener('error', () => { img.remove(); box.setAttribute('aria-hidden', 'true'); }, { once: true });
       box.append(img);
     }
     return box;
@@ -527,7 +542,7 @@
     if (ALBUMS.length) {
       blocks.push(pane('essential_albums/', `${ALBUMS.length} records`,
         h('ul', { class: 'albums' }, ALBUMS.map((a) => h('li', { class: 'album' },
-          sleeve(a.cover),
+          sleeve(coverFor(a), '', `Album cover: ${str(a.title)}${str(a.artist) ? ' by ' + str(a.artist) : ''}`),
           h('div', { class: 'album-b' },
             h('h3', null, str(a.title)),
             str(a.artist) && h('p', { class: 'album-artist' }, str(a.artist)),
@@ -565,7 +580,7 @@
       const wc = wishCounts();
       blocks.push(pane('vinyl.wishlist', `want ${wc.want} / hunting ${wc.hunting} / acquired ${wc.acquired}`,
         h('ul', { class: 'wishlist' }, WISHLIST.map((w) => h('li', { class: 'wish wish--' + w.status },
-          sleeve(w.cover, 'sleeve--sm'),
+          sleeve(coverFor(w), 'sleeve--sm', `Album cover: ${str(w.title)}${str(w.artist) ? ' by ' + str(w.artist) : ''}`),
           h('div', { class: 'wish-b' },
             h('p', { class: 'wish-t' }, str(w.title)),
             str(w.artist) && h('p', { class: 'wish-a' }, str(w.artist)),
@@ -644,7 +659,7 @@
   function folderRows(folders) {
     return h('div', { class: 'ls' }, folders.map((f) => {
       const n = folderTotal(f);
-      const subs = f.folders.length;
+      const subs = publicSubs(f).length;
       return h('a', { class: 'ls-row', href: `#archive/${f.path}` },
         h('span', { class: 'ls-perm' }, 'drwxr-xr-x'),
         h('span', { class: 'ls-size' }, n ? `${n} file${n === 1 ? '' : 's'}` : 'empty'),
@@ -681,7 +696,7 @@
     const total = ARCHIVE.length + VIDEO_COUNT;
     return [
       total === 0 && empty('No files indexed yet.', 'directory awaiting new fragments.'),
-      pane('ls ~/archive.raw', `${ARCHIVE_ROOT.length} folders / ${total} file${total === 1 ? '' : 's'}`, folderRows(ARCHIVE_ROOT)),
+      pane('ls ~/archive.raw', `${PUBLIC_ROOT.length} folder${PUBLIC_ROOT.length === 1 ? '' : 's'} / ${total} file${total === 1 ? '' : 's'}`, folderRows(PUBLIC_ROOT)),
       total === 0 && emptySlots(6),
     ];
   }
@@ -694,12 +709,12 @@
       h('header', { class: 'folder-head' },
         h('h3', { id: 'archive-here', tabindex: '-1' }, folder.id + '/'),
         folder.description && h('p', null, folder.description)),
-      folder.folders.length > 0 && pane('subfolders', `${folder.folders.length}`, folderRows(folder.folders)),
+      publicSubs(folder).length > 0 && pane('subfolders', `${publicSubs(folder).length}`, folderRows(publicSubs(folder))),
       items.length > 0 && pane(`${folder.id}/`, `${items.length} file${items.length === 1 ? '' : 's'}`,
         h('ul', { class: 'tiles gallery' }, items.map(tile))),
       folder.videos.length > 0 && pane(`${folder.id}/ // video`, `${folder.videos.length} video${folder.videos.length === 1 ? '' : 's'}`,
         h('ul', { class: 'videos' }, folder.videos.map(videoCard))),
-      items.length === 0 && folder.videos.length === 0 && folder.folders.length === 0 && [
+      items.length === 0 && folder.videos.length === 0 && publicSubs(folder).length === 0 && [
         empty(`${folder.id}/ is empty.`, 'nothing has been filed here yet.'),
         emptySlots(3),
       ],
@@ -780,7 +795,7 @@
     if (parts.length) {
       const last = parts[parts.length - 1].match(IMG_SEG);
       const folderPath = (last ? parts.slice(0, -1) : parts).join('/');
-      folder = ARCHIVE_INDEX.get(folderPath);
+      folder = PUBLIC_INDEX.get(folderPath); // hidden (empty) folders behave like missing pages
       if (!folder) return null;
       if (last) {
         imgN = Number(last[1]);
@@ -995,20 +1010,20 @@
     archive: { d: 'list folders, or: archive <folder>', run(args) {
       const target = slugPath(args[0]);
       if (target) {
-        const f = ARCHIVE_INDEX.get(target);
+        const f = PUBLIC_INDEX.get(target);
         if (!f) { line(`archive: no such folder: ${args[0]}. try `, acc('archive'), '.'); return; }
         go('archive/' + f.path, { keepFocus: true });
         line(dim('opening '), acc(`~/${ID.username}/archive.raw/${f.path}/`), dim(' ...'));
-        if (f.folders.length) f.folders.forEach((sf) => line(dim('  '), archBtn(sf), dim(`  ${folderTotal(sf) || 'empty'}`)));
+        publicSubs(f).forEach((sf) => { const n = folderTotal(sf); line(dim('  '), archBtn(sf), dim(`  ${n} file${n === 1 ? '' : 's'}`)); });
         if (f.videos.length) f.videos.forEach((v) => line(dim('  ▶ '), acc(v.file.split('/').pop()), dim(v.title ? `  ${v.title}` : '')));
         const here = f.items.length + f.videos.length;
-        line(dim(here ? `${here} file(s) here.` : (f.folders.length ? 'no files at this level.' : 'empty. nothing filed here yet.')));
+        line(dim(here ? `${here} file(s) here.` : 'no files at this level.'));
         return;
       }
       opening('archive');
-      ARCHIVE_ROOT.forEach((f) => { const n = folderTotal(f); line(dim('  '), archBtn(f), dim(`  ${n ? n + ' file' + (n === 1 ? '' : 's') : 'empty'}`)); });
+      PUBLIC_ROOT.forEach((f) => { const n = folderTotal(f); line(dim('  '), archBtn(f), dim(`  ${n} file${n === 1 ? '' : 's'}`)); });
       const all = ARCHIVE.length + VIDEO_COUNT;
-      line(dim(all ? `${all} file(s) across ${ARCHIVE_INDEX.size} folders${VIDEO_COUNT ? ` (${VIDEO_COUNT} video${VIDEO_COUNT === 1 ? '' : 's'})` : ''}.` : 'no files indexed yet.'));
+      line(dim(all ? `${all} file(s) across ${PUBLIC_INDEX.size} folder${PUBLIC_INDEX.size === 1 ? '' : 's'}${VIDEO_COUNT ? ` (${VIDEO_COUNT} video${VIDEO_COUNT === 1 ? '' : 's'})` : ''}.` : 'no files indexed yet.'));
     } },
     random: { d: 'pull a random archive item', run() {
       if (!ARCHIVE.length) { line(dim('archive.raw is empty. nothing to retrieve yet, and ko refuses to make something up.')); return; }
@@ -1137,7 +1152,7 @@
         const val = input.value;
         if (!val) return; // let Tab move focus when the line is empty
         const parts = val.split(/\s+/);
-        const pool = parts.length > 1 && parts[0] === 'archive' ? [...ARCHIVE_INDEX.keys()]
+        const pool = parts.length > 1 && parts[0] === 'archive' ? [...PUBLIC_INDEX.keys()]
           : parts.length > 1 && ['cd', 'open'].includes(parts[0]) ? SECTIONS.map((x) => x.id)
           : parts.length > 1 && parts[0] === 'theme' ? THEMES
             : parts.length === 1 ? Object.keys(CMDS).filter((k) => !CMDS[k].hidden) : [];

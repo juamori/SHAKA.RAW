@@ -220,6 +220,8 @@ window.SHAKA_CONFIG = {
      id must be lowercase letters, numbers, _ or -. It is also the folder's address:
      #archive/crash_romance/members  */
   archive: {
+    // Folders with no files are hidden on the site until you add something to them.
+    // The empty ones below are reserved for later; adding a file makes them appear.
     folders: [
       { id: "visual_noise", description: "", items: [] },
       { id: "digital_artifacts", description: "", items: [] },

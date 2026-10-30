@@ -61,6 +61,18 @@ Everything lives under `music` in `config.js`:
 - `tracks`: `{ title, artist, src }`. A local audio file you have the right to share becomes playable in the site player. With none, the player says it's unconfigured and never pretends to play.
 - `cassettes`: reserved for later; nothing reads it yet.
 
+## Album covers
+
+Put a cover image in `assets/music/covers/` named after the album, `title-artist` in lowercase with hyphens:
+
+```
+girl-pharrell-williams.jpg          made-bigbang.jpg
+aurora-daisy-jones-the-six.jpg      born-in-the-u-s-a-bruce-springsteen.jpg
+rumours-fleetwood-mac.jpg
+```
+
+Run `python tools/build_archive.py`. It makes a square 600×600 WebP copy in `assets/music/covers/web/` (your original is left untouched), and the Music section shows it automatically with alt text such as "Album cover: Rumours by Fleetwood Mac". Albums without a file keep the vinyl-sleeve placeholder. Wishlist records work the same way (e.g. `random-access-memories-daft-punk.jpg`). Only use images you have the right to publish.
+
 ## Add projects and interests
 
 Put images in `assets/` (e.g. `assets/lab/`) and reference them by path.
@@ -112,6 +124,7 @@ What the script does:
 - Makes `thumbs/` (grid previews) and, for large images, `display/` (viewer versions). Originals are kept for "open full size". Don't edit or upload into `thumbs/` or `display/` by hand.
 - Removes hidden PNG tags that identify an account (e.g. Xbox screenshot author/ID); pixels are not changed.
 - `python tools/build_archive.py --check` previews everything without changing anything.
+- Folders with no files are hidden on the site (reserved folders stay in `config.js` and on disk); they appear automatically once they contain a file.
 - A new folder on disk shows up in the Archive automatically. Add it to `config.js` only to give it a description or a position in the list.
 
 **Giving an image details (optional):** in `config.js`, under that folder's `items`, add a line matched by file path. Only the fields you write are shown:

@@ -465,5 +465,6 @@ window.SHAKA_ARCHIVE_MANIFEST = {
   ],
   "unsorted": [],
   "visual_noise": []
- }
+ },
+ "covers": {}
 };
