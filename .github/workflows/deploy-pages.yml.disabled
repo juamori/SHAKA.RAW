@@ -1,0 +1,56 @@
+# SHAKA.RAW — build the archive and publish to GitHub Pages.
+#
+# OPTIONAL. Lets you add images through github.com (no local Python needed):
+# every push rebuilds thumbnails + archive-manifest.js, then publishes the site.
+#
+# One-time setup: repository Settings → Pages → Build and deployment →
+# Source: "GitHub Actions".  (If you keep "Deploy from a branch" instead, this
+# workflow can be deleted; then run  python tools/build_archive.py  locally and
+# commit the results.)
+#
+# Note: files are not renamed here (renames made in this build would not be
+# saved back to the repository). New images still appear, just with their
+# original names. Run  python tools/build_archive.py --rename  locally to tidy.
+
+name: Deploy SHAKA.RAW
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build archive (thumbnails, display versions, manifest)
+        run: |
+          pip install pillow
+          python tools/build_archive.py
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
