@@ -466,5 +466,19 @@ window.SHAKA_ARCHIVE_MANIFEST = {
   "unsorted": [],
   "visual_noise": []
  },
- "covers": {}
+ "covers": {
+  "a-star-is-born-soundtrack": "assets/music/covers/web/a-star-is-born-soundtrack.webp",
+  "aurora-daisy-jones-the-six": "assets/music/covers/web/aurora-daisy-jones-the-six.webp",
+  "born-in-the-u-s-a-bruce-springsteen": "assets/music/covers/web/born-in-the-u-s-a-bruce-springsteen.webp",
+  "calm-5-seconds-of-summer": "assets/music/covers/web/calm-5-seconds-of-summer.webp",
+  "girl-pharrell-williams": "assets/music/covers/web/girl-pharrell-williams.webp",
+  "greatest-hits-ac-dc": "assets/music/covers/web/greatest-hits-ac-dc.webp",
+  "greatest-hits-aerosmith": "assets/music/covers/web/greatest-hits-aerosmith.webp",
+  "greatest-hits-green-day": "assets/music/covers/web/greatest-hits-green-day.webp",
+  "made-bigbang": "assets/music/covers/web/made-bigbang.webp",
+  "random-access-memories-daft-punk": "assets/music/covers/web/random-access-memories-daft-punk.webp",
+  "rumours-fleetwood-mac": "assets/music/covers/web/rumours-fleetwood-mac.webp",
+  "something-to-tell-you-haim": "assets/music/covers/web/something-to-tell-you-haim.webp",
+  "teatro-dira-vol-i-maneskin": "assets/music/covers/web/teatro-dira-vol-i-maneskin.webp"
+ }
 };
