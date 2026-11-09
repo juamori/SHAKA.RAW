@@ -110,10 +110,10 @@ window.SHAKA_CONFIG = {
     // To pin an image yourself, add cover: "https://..." to a playlist.
     fetchPlaylistArtwork: true,
     playlists: [
-      { title: "Teenage dirtbag", url: "https://open.spotify.com/playlist/0lnYjiM6YWfAyyXzOv2rKz", tags: ["Y2K", "Alternative", "Nostalgia"] },
-      { title: "For once in my life", url: "https://open.spotify.com/playlist/0p4c2X5R1ahPNF5mTIErVn", tags: ["Vinyl", "Soul", "Feelings"] },
-      { title: "Fletrohits de verano", url: "https://open.spotify.com/playlist/19iF69o7mA4Yc4ySuUPcR2", tags: ["Summer", "Chaos", "Unexpected"] },
-      { title: "Horizonte", url: "https://open.spotify.com/playlist/5z3E9f1t1TnFMocdu4KH5K", tags: ["Driving", "Cinematic", "Atmosphere"] },
+      { title: "Horizonte", url: "https://open.spotify.com/playlist/0lnYjiM6YWfAyyXzOv2rKz", tags: ["Driving", "Cinematic", "Atmosphere"] },
+      { title: "Eletrohits de verano", url: "https://open.spotify.com/playlist/0p4c2X5R1ahPNF5mTIErVn", tags: ["Summer", "Chaos", "Unexpected"] },
+      { title: "Teenage dirtbag", url: "https://open.spotify.com/playlist/19iF69o7mA4Yc4ySuUPcR2", tags: ["Y2K", "Alternative", "Nostalgia"] },
+      { title: "For once in my life", url: "https://open.spotify.com/playlist/5z3E9f1t1TnFMocdu4KH5K", tags: ["Vinyl", "Soul", "Feelings"] },
     ],
 
     // Records I want. Editions are not specified on purpose.
